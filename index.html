@@ -61,7 +61,7 @@ function renderHome(){
  <label>ยอดเบิกเต็มจำนวน</label><input id="fAmount" type="number" min="0" step="0.01" placeholder="เช่น 3,000">
  <label>เลขา</label><select id="fSec">${db.secretaries.map(s=>`<option>${s}</option>`).join('')}</select>
  <label>สถานะโอนลูกค้า</label><select id="fPaid"><option value="no">ยังไม่โอนลูกค้า</option><option value="yes">โอนลูกค้าแล้ว</option></select>
- <div id="calc" class="filterbar" style="font-size:16px;line-height:1.9"></div><button class="primary" style="width:100%;margin-top:8px" onclick="addRecord()">บันทึกรายการ</button></section>`;
+ <div id="calc" class="filterbar"></div><button class="primary" style="width:100%;margin-top:8px" onclick="addRecord()">บันทึกรายการ</button></section>`;
  ['fDate','fHouse','fAmount'].forEach(id=>$(id).addEventListener('input',updateHome));
  updateHome();
 }
@@ -69,9 +69,7 @@ function updateHome(){
  const d=$('fDate').value,h=$('fHouse').value,a=+$('fAmount').value||0,s=getStatus(h,d);
  $('homeStatus').innerHTML=`<button class="${s==='green'?'active green':''}" onclick="changeStatus('${h}','${d}','green')">🟢 เบิกได้</button><button class="${s==='yellow'?'active yellow':''}" onclick="changeStatus('${h}','${d}','yellow')">🟡 หยุดเบิก</button>`;
  const r={house:h,amount:a};
- $('calc').innerHTML = h==='อื่นๆ'
- ? `<b>สถานะวันนี้: ${s==='green'?'🟢 เบิกได้':'🟡 หยุดเบิก'}</b><br><b>บ้านอื่นๆ: ไม่หัก 10%</b><br>ยอดเต็ม: <b>${money(a)}</b> บาท`
- : `<b>สถานะวันนี้: ${s==='green'?'🟢 เบิกได้':'🟡 หยุดเบิก'}</b><br><span>ยอดเบิกเต็ม: <b>${money(a)}</b> บาท</span><br><span style="color:#b45309">หักค่าดำเนินการ 10%: <b>${money(fee(r))}</b> บาท</span><br><span style="color:#166534">ลูกค้าได้รับ 90%: <b>${money(net(r))}</b> บาท</span><br><span>เลขา: <b>${money(fee(r))}</b> บาท</span>${s==='yellow'?'<br><span class="muted">รายการบ้านหยุดเบิกจะเป็นเงินสำรองของบ้านนี้</span>':''}`;
+ $('calc').innerHTML=`<b>สถานะวันนี้: ${s==='green'?'🟢 เบิกได้':'🟡 หยุดเบิก'}</b><br>ลูกค้าได้รับ: <b>${money(net(r))}</b> บาท<br>เลขา: <b>${money(fee(r))}</b> บาท${s==='yellow'?'<br><span class="muted">รายการบ้านหยุดเบิกจะเป็นเงินสำรองของบ้านนี้</span>':''}`;
 }
 function changeStatus(h,d,s){db.statuses[d+'|'+h]=s;save();}
 function addRecord(){
