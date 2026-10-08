@@ -92,11 +92,12 @@ return db.records.filter(r=>(!date||r.date===date)&&(!hs.length||hs.includes(r.h
 }
 function summary(){
 app.innerHTML=`<section class=card><h2>📊 สรุป</h2><label>วันที่</label><input id=sd type=date value="${today()}">
-<label>เลือกบ้าน (เลือกได้หลายบ้าน)</label><div class=checks id=houses></div><div id=sum></div></section>`;
-document.getElementById('houses').innerHTML=db.houses.map((h,i)=>`<label><input type=checkbox value="${h}" onchange="drawSummary()"> ${h}</label>`).join('');
+<label>เลือกบ้าน (เลือกได้หลายบ้าน)</label><select id="houseFilter" multiple size="6" onchange="drawSummary()"></select><div class="muted" style="margin-top:6px">กดเลือกได้หลายบ้าน เช่น บ้าน 2 + 3 + 4 • ไม่เลือก = ทุกบ้าน</div><div class=checks id=houses style="margin-top:8px"></div><div id=sum></div></section>`;
+document.getElementById('houses').innerHTML=db.houses.map((h,i)=>`<label><input type=checkbox value="${h}" onchange="syncFilter();drawSummary()"> ${h}</label>`).join('');
+document.getElementById('houseFilter').innerHTML=db.houses.map(h=>`<option value="${h}">${h}</option>`).join('');
 sd.onchange=drawSummary;drawSummary()
 }
-function selected(){return [...document.querySelectorAll('#houses input:checked')].map(x=>x.value)}
+function selected(){let box=[...document.querySelectorAll('#houses input:checked')].map(x=>x.value);let sel=[...document.getElementById('houseFilter').selectedOptions].map(x=>x.value);return sel.length?sel:box} function syncFilter(){let vals=[...document.querySelectorAll('#houses input:checked')].map(x=>x.value);[...document.getElementById('houseFilter').options].forEach(o=>o.selected=vals.includes(o.value))}
 function drawSummary(){
 let d=sd.value,hs=selected(),rs=filteredRecords(d,hs),total=rs.reduce((x,r)=>x+r.amount,0);
 let rows=db.houses.filter(h=>!hs.length||hs.includes(h)).map(h=>{
