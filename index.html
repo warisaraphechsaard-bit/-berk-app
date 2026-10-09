@@ -35,21 +35,23 @@ nav button{flex:1;background:transparent;color:#555;padding:6px 2px;font-size:11
 const KEY='berk_new_v2';
 const defaultHouses=['วริศ','ศิลา','ภูดิส','สามชั้น','แพรี่','ปุณปุณ','ริชชี่','เค้กส้ม','พริกเพชร','อื่นๆ'];
 const defaultSecs=['อุษา','เดีย','แนน','ใหม่','นิว','หญิง','เกด','พริก','แจ๋ว','หมิว'];
-let db=JSON.parse(localStorage.getItem(KEY)||'null')||{wallet:30000,houses:[...defaultHouses],secretaries:[...defaultSecs],records:[],statuses:{},adjust:[]};
-// ปรับยอดกระเป๋าจากกติกาเก่า (หักเต็มยอด) เป็นกติกาใหม่ (หักเฉพาะยอดโอนลูกค้า) เพียงครั้งเดียว
-if(!db.walletNetTransferMigration){
-  const restore=db.records.filter(r=>r.paid==='yes').reduce((sum,r)=>sum+(r.amount-net(r)),0);
-  db.wallet=(Number(db.wallet)||0)+restore;
-  db.walletNetTransferMigration=true;
-  localStorage.setItem(KEY,JSON.stringify(db));
-}
+let db;
+try { db=JSON.parse(localStorage.getItem(KEY)||'null'); } catch(e) { db=null; }
+if(!db || typeof db!=='object') db={};
+if(!Number.isFinite(Number(db.wallet))) db.wallet=30000; else db.wallet=Number(db.wallet);
+if(!Array.isArray(db.houses) || !db.houses.length) db.houses=[...defaultHouses];
+if(!Array.isArray(db.secretaries) || !db.secretaries.length) db.secretaries=[...defaultSecs];
+if(!Array.isArray(db.records)) db.records=[];
+if(!db.statuses || typeof db.statuses!=='object') db.statuses={};
+if(!Array.isArray(db.adjust)) db.adjust=[];
+db.records=db.records.filter(r=>r && typeof r==='object' && r.house && Number.isFinite(Number(r.amount))).map(r=>({...r,amount:Number(r.amount),id:Number(r.id)||Date.now(),date:r.date||new Date().toISOString().slice(0,10),paid:r.paid||'no',returned:!!r.returned}));
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toISOString().slice(0,10);
 const money=n=>Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
 const getStatus=(h,d)=>db.statuses[d+'|'+h]||'green';
 const fee=r=>r.house==='อื่นๆ'?0:r.amount*.10;
 const net=r=>r.house==='อื่นๆ'?r.amount:r.amount*.90;
-function save(){localStorage.setItem(KEY,JSON.stringify(db));render();}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));try{render();}catch(e){console.error(e);$('app').innerHTML='<section class="card"><h2>โปรแกรมเบิก</h2><p>ข้อมูลเดิมบางส่วนมีรูปแบบไม่ถูกต้อง กรุณารีเฟรชหน้าเว็บอีกครั้ง</p><button class="primary" onclick="location.reload()">รีเฟรชหน้า</button></section>';}}
 function setPage(p){window.currentPage=p;render();}
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>setPage(b.dataset.page));
 window.currentPage='home';
@@ -76,7 +78,7 @@ function updateHome(){
  const d=$('fDate').value,h=$('fHouse').value,a=+$('fAmount').value||0,s=getStatus(h,d);
  $('homeStatus').innerHTML=`<button class="${s==='green'?'active green':''}" onclick="changeStatus('${h}','${d}','green')">🟢 เบิกได้</button><button class="${s==='yellow'?'active yellow':''}" onclick="changeStatus('${h}','${d}','yellow')">🟡 หยุดเบิก</button>`;
  const r={house:h,amount:a};
- $('calc').innerHTML=`<b>สถานะวันนี้: ${s==='green'?'🟢 เบิกได้':'🟡 หยุดเบิก'}</b><br>ยอดเบิกเต็ม: <b>${money(a)}</b> บาท<br>หัก 10%: <b>${money(fee(r))}</b> บาท<br>โอนลูกค้า 90%: <b>${money(net(r))}</b> บาท<br>เมื่อเลือก “โอนลูกค้าแล้ว” กระเป๋าจะหักเฉพาะ <b>${money(net(r))}</b> บาท${s==='yellow'?'<br><span class="muted">รายการบ้านหยุดเบิกจะเป็นเงินสำรองของบ้านนี้</span>':''}`;
+ $('calc').innerHTML=`<b>สถานะวันนี้: ${s==='green'?'🟢 เบิกได้':'🟡 หยุดเบิก'}</b><br>ลูกค้าได้รับ: <b>${money(net(r))}</b> บาท<br>เลขา: <b>${money(fee(r))}</b> บาท${s==='yellow'?'<br><span class="muted">รายการบ้านหยุดเบิกจะเป็นเงินสำรองของบ้านนี้</span>':''}`;
 }
 function changeStatus(h,d,s){db.statuses[d+'|'+h]=s;save();}
 function addRecord(){
@@ -143,7 +145,7 @@ function renderSettings(){
 function adjustWallet(){const n=+$('adjustAmount').value||0;if(!n)return;db.wallet+=n;db.adjust.push({date:today(),amount:n});save();}
 function addHouse(){const h=$('newHouse').value.trim();if(!h)return;if(db.houses.includes(h))return alert('มีบ้านนี้แล้ว');db.houses.push(h);save();}
 function addSec(){const s=$('newSec').value.trim();if(!s)return;if(db.secretaries.includes(s))return alert('มีเลขานี้แล้ว');db.secretaries.push(s);save();}
-render();
+try{render();}catch(e){console.error('Render error:',e);$('app').innerHTML='<section class="card"><h2>โปรแกรมเบิก</h2><p>หน้าโปรแกรมกำลังซ่อมการแสดงผล กรุณารีเฟรชหน้าเว็บ</p><button class="primary" onclick="location.reload()">รีเฟรชหน้า</button></section>'; }
 </script>
 </body>
 </html>
