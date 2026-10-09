@@ -71,7 +71,7 @@ button{border:0;border-radius:11px;padding:10px 12px;font-weight:700;font:inheri
 </div>
 <div class="card">
 <h2>💰 แก้ยอดเงินในกระเป๋า</h2>
-<div class="muted">ใส่ยอดเงินจริงที่มีอยู่ตอนนี้ ระบบจะไม่บวกหรือลดยอดอัตโนมัติจากรายการเบิก คุณเป็นคนกำหนดยอดเอง</div>
+<div class="muted">ใส่ยอดเงินจริงที่มีอยู่ตอนนี้ได้ หลังจากนั้นเมื่อบันทึกรายการและเลือก “โอนลูกค้าแล้ว” ระบบจะหักยอดที่จ่ายให้ลูกค้าออกจากกระเป๋าอัตโนมัติ คุณยังแก้ยอดเองได้ทุกเมื่อ</div>
 <div style="display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:10px">
 <input id="walletInput" type="number" step="0.01" placeholder="พิมพ์ยอดคงเหลือที่ต้องการ">
 <button class="blue" onclick="saveWalletVisible()">💾 ตั้งยอดเอง</button>
@@ -151,7 +151,7 @@ function addHouseVisible(){
  let n=$("newHouse").value.trim();
  if(!n)return alert("กรุณาใส่ชื่อบ้าน");
  if(houses.includes(n))return alert("มีบ้านชื่อนี้อยู่แล้ว");
- houses.push(n);hs[n]=true;$("newHouse").value="";persist();render();
+ houses.push(n);hs[n]=true;$("summaryHouseFilters").dataset.ready="";$("newHouse").value="";persist();render();
 }
 function addSecretaryVisible(){
  let n=$("newSec").value.trim();
@@ -165,8 +165,8 @@ function saveWalletVisible(){
  let old=wallet();walletOverride=n;walletAdjust.push({date:today(),old:old,new:n});
 $("walletInput").value="";persist();render();alert("บันทึกยอดกระเป๋าแล้ว");
 }
-function toggleH(h){hs[h]=hs[h]===false;persist();render()}function renameH(h){let n=prompt("พิมพ์ชื่อบ้านใหม่",h);if(!n||!n.trim()||n.trim()===h)return;n=n.trim();if(houses.includes(n))return alert("มีชื่อนี้อยู่แล้ว");let i=houses.indexOf(h);if(i<0)return;houses[i]=n;hs[n]=hs[h]!==false;delete hs[h];records.forEach(r=>{if(r.house===h)r.house=n});reserves.forEach(r=>{if(r.house===h)r.house=n});persist();render()}
-function removeH(h){if(!confirm("ลบบ้าน "+h+" ออกจากรายการเลือก? ประวัติเก่าจะยังเก็บชื่อไว้"))return;houses=houses.filter(x=>x!==h);delete hs[h];persist();render()}
+function toggleH(h){hs[h]=hs[h]===false;persist();render()}function renameH(h){let n=prompt("พิมพ์ชื่อบ้านใหม่",h);if(!n||!n.trim()||n.trim()===h)return;n=n.trim();if(houses.includes(n))return alert("มีชื่อนี้อยู่แล้ว");let i=houses.indexOf(h);if(i<0)return;houses[i]=n;hs[n]=hs[h]!==false;delete hs[h];$("summaryHouseFilters").dataset.ready="";records.forEach(r=>{if(r.house===h)r.house=n});reserves.forEach(r=>{if(r.house===h)r.house=n});persist();render()}
+function removeH(h){if(!confirm("ลบบ้าน "+h+" ออกจากรายการเลือก? ประวัติเก่าจะยังเก็บชื่อไว้"))return;houses=houses.filter(x=>x!==h);delete hs[h];$("summaryHouseFilters").dataset.ready="";persist();render()}
 function renameS(s){let n=prompt("พิมพ์ชื่อเลขาใหม่",s);if(!n||!n.trim()||n.trim()===s)return;n=n.trim();if(secs.includes(n))return alert("มีชื่อนี้อยู่แล้ว");let i=secs.indexOf(s);if(i<0)return;secs[i]=n;records.forEach(r=>{if(r.secretary===s)r.secretary=n});if(secPaid[s]!==undefined){secPaid[n]=(secPaid[n]||0)+secPaid[s];delete secPaid[s]}persist();render()}
 function removeS(s){if(!confirm("ลบเลขา "+s+" ออกจากรายการเลือก? ประวัติเก่าจะยังเก็บชื่อไว้"))return;secs=secs.filter(x=>x!==s);persist();render()}
 function renderManage(){
