@@ -134,7 +134,27 @@ function setHouseStatus(canBorrow){
 }
 function wallet(){return walletOverride===null?START:(+walletOverride||0)}
 function editWallet(){page("settings",document.querySelectorAll("nav button")[4])}
-function saveRecord(){let h=$("house").value,a=+$("amount").value;if(!a)return alert("กรุณาใส่ยอดเบิก");if(hs[h]===false)return alert("บ้านนี้หยุดเบิกอยู่");let other=h==="อื่นๆ";let x={id:editId||Date.now(),house:h,date:$("date").value,amount:a,fee:other?0:a*.1,net:other?a:a*.9,secretary:$("secretary").value,status:$("status").value,returned:false};if(editId){let i=records.findIndex(r=>r.id===editId);if(i>=0)records[i]=x}else records.push(x);editId=null;$("amount").value="";persist();render();alert("บันทึกแล้ว")}
+function saveRecord(){
+ let h=$("house").value,a=+$("amount").value;
+ if(!a)return alert("กรุณาใส่ยอดเบิก");
+ let other=h==="อื่นๆ";
+ let stoppedToday=(stopSchedule[$("date").value]||[]).includes(h);
+ let x={id:editId||Date.now(),house:h,date:$("date").value,amount:a,fee:other?0:a*.1,net:other?a:a*.9,secretary:$("secretary").value,status:$("status").value,returned:false,reserve:stoppedToday};
+ // Wallet changes only when customer transfer is marked paid.
+ // When editing a previously paid record, restore its previous deduction first to avoid double charging.
+ if(editId){
+   let i=records.findIndex(r=>r.id===editId);
+   if(i>=0){
+     let previous=records[i];
+     if(previous.status==="paid") walletOverride=wallet()+(Number(previous.net)||0);
+     records[i]=x;
+   }
+ } else {
+   records.push(x);
+ }
+ if(x.status==="paid") walletOverride=wallet()-x.net;
+ editId=null;$("amount").value="";persist();render();alert("บันทึกแล้ว");
+}
 function editRec(id){let r=records.find(x=>x.id===id);editId=id;$("house").value=r.house;$("date").value=r.date;$("amount").value=r.amount;$("secretary").value=r.secretary;$("status").value=r.status;showSelectedStatus();page("home",document.querySelector("nav button"))}
 function delRec(id){if(confirm("ลบรายการนี้ใช่ไหม?")){records=records.filter(r=>r.id!==id);persist();render()}}
 function returnMoney(id){let r=records.find(x=>x.id===id);if(!r||r.status!=="paid")return;if(r.returned)return;r.returned=true;persist();render()}
