@@ -115,6 +115,13 @@ function feeCalc(){let h=$("house").value,a=+$("amount").value||0,other=h==="อ
 $("amount").addEventListener("input",feeCalc);
 function showSelectedStatus(){
  let h=$("house").value,ok=hs[h]!==false;
+ let d=$("date")?.value||today();
+ let stoppedToday=(stopSchedule[d]||[]).includes(h);
+ if($("todayHouseStatus")){
+   $("todayHouseStatus").innerHTML = stoppedToday
+     ? `<div style="padding:10px;border-radius:10px;background:#fee2e2;color:#991b1b;font-weight:800">🔴 วันนี้บ้าน${h}หยุดเบิก — ยอดจะไปอยู่ยอดสำรอง</div>`
+     : `<div style="padding:10px;border-radius:10px;background:#dcfce7;color:#166534;font-weight:800">🟢 บ้าน${h}เบิกได้ในวันที่ ${d}</div>`;
+ }
  $("selectedStatus").innerHTML=`<div style="font-weight:800">${h} : <span class="tag ${ok?'ok':'stop'}">${ok?'🟢 เบิกได้':'🟡 หยุดเบิก'}</span></div>`;
  $("statusButtons").innerHTML=
    `<button type="button" class="${ok?'green':'gray'}" onclick="setHouseStatus(true)">🟢 เบิกได้</button>
@@ -176,11 +183,18 @@ function render(){
  renderManage();showSelectedStatus();renderSummary();renderReserve();renderHistory()
 }
 
+function previewStopStatus(input){
+ let label=input.parentElement.querySelector(".liveStopLabel");
+ if(label)label.textContent=input.checked?"🔴 หยุดเบิก":"🟢 เบิกได้";
+ let d=$("stopDate").value||today();
+ let temp=[...document.querySelectorAll(".stopHouseCheck:checked")].map(x=>x.value);
+ $("stopStatusSummary").innerHTML=`<b>วันที่ ${d}</b><br>🔴 หยุดเบิก: ${temp.join("、")||"ไม่มี"}<br>🟢 เบิกได้: ${houses.filter(h=>!temp.includes(h)).join("、")||"ไม่มี"}`;
+}
 function renderStopSchedule(){
  let d=$("stopDate").value||today();
  if(!$("stopDate").value)$("stopDate").value=d;
  let stopped=stopSchedule[d]||[];
- $("stopHouseList").innerHTML=houses.map(h=>`<label class="item" style="display:flex;align-items:center;gap:10px"><input type="checkbox" class="stopHouseCheck" value="${String(h).replace(/&/g,"&amp;").replace(/"/g,"&quot;")}" ${stopped.includes(h)?"checked":""} style="width:20px;height:20px">${h} ${stopped.includes(h)?"— 🟡 หยุดเบิก":"— 🟢 เบิกได้"}</label>`).join("")||'<div class="muted">ยังไม่มีชื่อบ้าน กรุณาเพิ่มบ้านในตั้งค่า</div>';
+ $("stopHouseList").innerHTML=houses.map(h=>`<label class="item" style="display:flex;align-items:center;gap:10px"><input type="checkbox" class="stopHouseCheck" value="${String(h).replace(/&/g,"&amp;").replace(/"/g,"&quot;")}" ${stopped.includes(h)?"checked":""} style="width:20px;height:20px" onchange="previewStopStatus(this)">${h} <span class="liveStopLabel" style="margin-left:auto;font-weight:800">${stopped.includes(h)?"🔴 หยุดเบิก":"🟢 เบิกได้"}</span></label>`).join("")||'<div class="muted">ยังไม่มีชื่อบ้าน กรุณาเพิ่มบ้านในตั้งค่า</div>';
  $("stopStatusSummary").innerHTML=stopStatusText(d).replace(/\n/g,"<br>");
 }
 function stopStatusText(d){
@@ -200,4 +214,4 @@ function copyStopStatus(){
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(()=>alert("คัดลอกสรุปสถานะแล้วค่ะ")).catch(()=>prompt("คัดลอกข้อความนี้",t));
  else prompt("คัดลอกข้อความนี้",t);
 }
-$("date").value=today();$("summaryDate").value=today();$("reserveDate").value=today();$("historyDate").value=today();if($("stopDate"))$("stopDate").value=today();render();</script></body></html>
+$("date").value=today();$("date").addEventListener("change",showSelectedStatus);$("summaryDate").value=today();$("reserveDate").value=today();$("historyDate").value=today();if($("stopDate"))$("stopDate").value=today();render();</script></body></html>
